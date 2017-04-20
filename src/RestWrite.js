@@ -171,6 +171,26 @@ RestWrite.prototype.runBeforeTrigger = function() {
         return result;
       }, []);
       this.data = response.object;
+
+      //Use Case: the beforeSave hook is trying to switch the changes to an existing object
+      //check if the objectId has been changed
+      if (this.query && this.query.objectId && response && response.object && response.object.id && response.object.id != this.query.objectId) {
+        //Check if the objectId on response.object exists by attempting a fetch
+        return response.object.fetch().then((object) => {
+          //the object exists
+          //Change the query to our new object
+          this.query.objectId = object.id;
+          //Change the original object to our "different" object
+          this.originalObject = object;
+          //We Don't delete the objectId
+          //delete this.data.objectId
+          //TODO: Does anything else need to be changed here?
+          },(error) => {
+          //the object Doesn't exist
+          //Delete the objectId
+          delete this.data.objectId
+        });
+      }
       // We should delete the objectId for an update write
       if (this.query && this.query.objectId) {
         delete this.data.objectId
